@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="my">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MMK ↔ THB Calculator (Integer Ceil Round)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <style>
+    body { background:#f0f4f8; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; }
+    header { background:linear-gradient(to right,#2563eb,#10b981); color:white; padding:1.2rem; text-align:center; border-radius:0.7rem; margin-bottom:1rem; }
+    .box { background:white; border-radius:1rem; box-shadow:0 2px 8px rgba(0,0,0,0.1); padding:1.25rem; margin-bottom:1.25rem; }
+    .label { font-size:1.15rem; font-weight:700; display:inline-flex; align-items:center; gap:.5rem; }
+    input, output, select { font-size:1.2rem; font-weight:600; }
+    .sub { font-size:0.85rem; color:#4b5563; margin-bottom:0.3rem; }
+    .rate-note { font-size:0.9rem; color:#6b7280; margin-top:0.4rem; font-weight:600; }
+    .thanks { color: #059669; font-size: 0.85rem; margin-top: 0.6rem; }
+    .btn { border-radius:0.75rem; border:none; background:#1f2937; color:white; padding:0.55rem 0.9rem; font-size:0.9rem; cursor:pointer; transition:background .2s, transform .05s; }
+    .btn:hover { background:#0f172a; } .btn:active { transform:translateY(1px); }
+    .flag { width:20px; height:auto; border-radius:2px; display:inline-block; }
+    .bank-export { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #cbd5e1; text-align:center; }
+    .qr-card { border:1px solid #e5e7eb; border-radius:14px; padding:12px; background:#fff; }
+  </style>
+</head>
+<body class="p-4">
+
+<header>
+  <h1 class="text-2xl font-bold">MMK ↔ THB ငွေလဲတွက်ချက်ခြင်း</h1>
+  <p class="text-sm">MMK ↔ THB Exchange Calculator</p>
+</header>
+
+<main class="max-w-2xl mx-auto">
+
+  <!-- Rate Entry -->
+  <section class="box">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">
+          <span>မြန်မာငွေ ၁ သိန်း အတွက် ဘတ် (THB)</span>
+        </label>
+        <p class="sub">THB per 100,000 MMK</p>
+        <input id="rate100k" class="w-full border rounded p-2" type="text" placeholder="820" inputmode="decimal">
+      </div>
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag">
+          <span>၁ ဘတ် အတွက် မြန်မာကျပ်</span>
+        </label>
+        <p class="sub">MMK per 1 THB</p>
+        <input id="ratePerThb" class="w-full border rounded p-2" type="text" placeholder="121.95" inputmode="decimal">
+      </div>
+    </div>
+  </section>
+
+  <!-- Bank QR selector + preview -->
+  <section class="box">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+      <div>
+        <label class="label"><span>Save JPEG ထဲ ထည့်မယ့် Bank QR</span></label>
+        <p class="sub">Select QR</p>
+
+        <select id="qrSelect" class="w-full border rounded p-2">
+          <option value="HBQR.jpg">HBQR</option>
+          <option value="HKQR.jpg">HKQR</option>
+          <option value="HTM7.jpg">HTM7</option>
+          <option value="YKQR.jpg">YKQR</option>
+          <option value="YKTBQR.jpg">YKTBQR</option>
+          <option value="YTM7.jpg">YTM7</option>
+          <option value="YTQR.jpg">YTQR</option>
+        </select>
+
+        <div class="flex items-center gap-3 mt-3">
+          <input id="includeBankQR" type="checkbox" class="w-5 h-5" checked>
+          <label for="includeBankQR" class="font-semibold">Save JPEG ထဲ QR ပါစေချင်တယ်</label>
+        </div>
+
+        <p class="rate-note mt-2">Folder: <span class="font-mono">assets/qr/</span></p>
+        <p id="qrStatus" class="text-sm mt-2 text-slate-600"></p>
+      </div>
+
+      <div class="qr-card text-center">
+        <p class="font-semibold">QR Preview</p>
+        <img id="qrPreview" alt="QR Preview" class="mx-auto mt-2 rounded-xl border bg-white" style="width:220px; min-height:220px; object-fit:contain;">
+        <p id="qrPreviewName" class="font-semibold mt-2"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- THB → MMK -->
+  <section id="box-thb2mmk" class="box capture-target">
+    <h2 class="text-lg font-semibold mb-2">ဘတ် → မြန်မာကျပ်</h2>
+    <p class="sub">THB → MMK</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">
+          <span>ဘတ်ငွေ</span>
+        </label>
+        <p class="sub">Input THB</p>
+        <input id="thbIn" class="w-full border rounded p-2" type="text" placeholder="6500" inputmode="numeric">
+      </div>
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag">
+          <span>မြန်မာကျပ်</span>
+        </label>
+        <p class="sub">Result MMK</p>
+        <output id="mmkOut" class="block w-full rounded border bg-gray-50 p-2 min-h-[42px]"></output>
+      </div>
+    </div>
+
+    <div class="text-center mt-3 section-footer">
+      <p class="rate-note" id="rateNote1"></p>
+      <p class="text-red-600 font-semibold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="text-red-600 font-semibold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+    </div>
+
+    <button id="btnSave1" type="button" class="btn mt-3">Save JPEG</button>
+  </section>
+
+  <!-- MMK → THB -->
+  <section id="box-mmk2thb" class="box capture-target">
+    <h2 class="text-lg font-semibold mb-2">မြန်မာကျပ် → ဘတ်</h2>
+    <p class="sub">MMK → THB</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/mm.png" alt="MM" class="flag">
+          <span>မြန်မာကျပ်</span>
+        </label>
+        <p class="sub">Input MMK</p>
+        <input id="mmkIn" class="w-full border rounded p-2" type="text" placeholder="1000000" inputmode="numeric">
+      </div>
+      <div>
+        <label class="label">
+          <img src="https://flagcdn.com/w20/th.png" alt="TH" class="flag">
+          <span>ဘတ်ငွေ</span>
+        </label>
+        <p class="sub">Result THB</p>
+        <output id="thbOut" class="block w-full rounded border bg-gray-50 p-2 min-h-[42px]"></output>
+      </div>
+    </div>
+
+    <div class="text-center mt-3 section-footer">
+      <p class="rate-note" id="rateNote2"></p>
+      <p class="text-red-600 font-semibold mt-2">ငွေလွှဲတိုင်း ဘဏ်အကောင့်တောင်းပေးပါ။</p>
+      <p class="text-red-600 font-semibold mt-2">ဘဏ်အကောင့် မတောင်းဘဲ လွှဲလာသော မည်သည့် ငွေလွှဲမှ တာဝန်မယူပါ။</p>
+      <p class="thanks">Thailand Guide - Supplier By Ye Page ကို ယုံကြည်စွာ အသုံးပြုမှုအတွက် ကျေးဇူးအထူးတင်ပါတယ်။</p>
+    </div>
+
+    <button id="btnSave2" type="button" class="btn mt-3">Save JPEG</button>
+  </section>
+
+</main>
+
+<script>
+/* ---------------- Myanmar digits + number helpers ---------------- */
+function normalizeDigits(v){
+  const map = {'၀':'0','၁':'1','၂':'2','၃':'3','၄':'4','၅':'5','၆':'6','၇':'7','၈':'8','၉':'9'};
+  return (v || '').replace(/[၀၁၂၃၄၅၆၇၈၉]/g, d => map[d] ?? d);
+}
+const $ = s => document.querySelector(s);
+const parseNum = v => {
+  v = normalizeDigits(String(v).trim());
+  const n = Number(v.replace(/,/g,''));
+  return Number.isFinite(n) ? n : NaN;
+};
+const fmt0ceil = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}).format(Math.ceil(n));
+const fmt6 = n => new Intl.NumberFormat('en-US',{minimumFractionDigits:0,maximumFractionDigits:6}).format(n);
+
+/* ---------------- Calculator ---------------- */
+function getRate(){
+  const a = parseNum($('#rate100k').value);
+  const b = parseNum($('#ratePerThb').value);
+  if(Number.isFinite(a) && a>0) return a;
+  if(Number.isFinite(b) && b>0) return 100000 / b;
+  return NaN;
+}
+function refreshRateNote(){
+  const r = getRate();
+  if(Number.isFinite(r) && r>0){
+    const inv = 100000 / r;
+    $('#rateNote1').textContent = `မြန်မာငွေ ၁ သိန်း = ${fmt6(r)} ဘတ် | ၁ ဘတ် = ${fmt6(inv)} ကျပ်`;
+    $('#rateNote2').textContent = `မြန်မာငွေ ၁ သိန်း = ${fmt6(r)} ဘတ် | ၁ ဘတ် = ${fmt6(inv)} ကျပ်`;
+  } else {
+    $('#rateNote1').textContent = '';
+    $('#rateNote2').textContent = '';
+  }
+}
+function recalc(){
+  const rate = getRate();
+  const thb  = parseNum($('#thbIn').value);
+  const mmk  = parseNum($('#mmkIn').value);
+
+  $('#mmkOut').textContent = (Number.isFinite(rate) && Number.isFinite(thb))
+    ? fmt0ceil(thb*100000/rate) + ' MMK' : '';
+  $('#thbOut').textContent = (Number.isFinite(rate) && Number.isFinite(mmk))
+    ? fmt0ceil(mmk*rate/100000) + ' THB' : '';
+}
+let lock=false;
+function syncFrom100k(){
+  if(lock) return; lock=true;
+  const r = parseNum($('#rate100k').value);
+  if(Number.isFinite(r) && r>0) $('#ratePerThb').value = fmt6(100000 / r);
+  lock=false; refreshRateNote(); recalc();
+}
+function syncFromPerThb(){
+  if(lock) return; lock=true;
+  const inv = parseNum($('#ratePerThb').value);
+  if(Number.isFinite(inv) && inv>0) $('#rate100k').value = fmt6(100000 / inv);
+  lock=false; refreshRateNote(); recalc();
+}
+['rate100k','ratePerThb','thbIn','mmkIn'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', recalc);
+});
+$('#rate100k').addEventListener('input', syncFrom100k);
+$('#ratePerThb').addEventListener('input', syncFromPerThb);
+$('#rate100k').value = '820';
+syncFrom100k();
+recalc();
+
+/* ---------------- QR loader (preview + reuse for save) ---------------- */
+const QR_BASES = ['assets/qr/','./assets/qr/','assets/','./assets/','qr/','./qr/'];
+let CURRENT_QR_OBJURL = null; // cache current preview QR as blob url
+let CURRENT_QR_NAME = '';
+
+async function tryFetchObjectUrl(url){
+  const res = await fetch(url, { cache:'no-store' });
+  if(!res.ok) return null;
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+async function resolveQrObjectUrl(fileName){
+  for(const base of QR_BASES){
+    const url = new URL(base + fileName, window.location.href).href;
+    const obj = await tryFetchObjectUrl(url);
+    if(obj) return { objUrl: obj, url };
+  }
+  return null;
+}
+
+async function refreshQrPreview(){
+  const file = $('#qrSelect').value;
+  const name = $('#qrSelect').options[$('#qrSelect').selectedIndex].text;
+  $('#qrPreviewName').textContent = name;
+
+  if(CURRENT_QR_OBJURL){
+    URL.revokeObjectURL(CURRENT_QR_OBJURL);
+    CURRENT_QR_OBJURL = null;
+  }
+
+  $('#qrStatus').textContent = 'QR ရှာနေပါတယ်...';
+  $('#qrPreview').removeAttribute('src');
+
+  const found = await resolveQrObjectUrl(file);
+  if(!found){
+    $('#qrStatus').textContent = `မတွေ့ပါ ❌  (assets/qr/${file} သို့ မမှန်နိုင်ပါ)`;
+    CURRENT_QR_NAME = '';
+    return;
+  }
+
+  CURRENT_QR_OBJURL = found.objUrl;
+  CURRENT_QR_NAME = name;
+  $('#qrPreview').src = CURRENT_QR_OBJURL;
+
+  await new Promise(res=>{
+    const img = $('#qrPreview');
+    if(img.complete) return res();
+    img.onload = () => res();
+    img.onerror = () => res();
+  });
+
+  $('#qrStatus').textContent = `OK ✅ Found: ${found.url}`;
+}
+
+$('#qrSelect').addEventListener('change', refreshQrPreview);
+refreshQrPreview();
+
+/* ---------------- Save JPEG (capture section UI + QR) ---------------- */
+async function saveSectionAsJpeg(sectionId, filename){
+  await document.fonts?.ready;
+
+  const original = document.getElementById(sectionId);
+  const clone = original.cloneNode(true);
+  clone.querySelectorAll('button').forEach(b=>b.remove());
+
+  const includeQR = $('#includeBankQR').checked;
+
+  // append QR block (use CURRENT_QR_OBJURL from preview)
+  if(includeQR && CURRENT_QR_OBJURL){
+    const wrap = document.createElement('div');
+    wrap.className = 'bank-export';
+
+    const title = document.createElement('p');
+    title.className = 'text-slate-700 font-semibold mt-2';
+    title.textContent = 'ငွေလွှဲရန်ဘဏ်အချက်အလက်';
+
+    const img = document.createElement('img');
+    img.alt = 'Bank QR';
+    img.style.width = '260px';
+    img.style.margin = '10px auto 0';
+    img.style.border = '1px solid #e5e7eb';
+    img.style.borderRadius = '14px';
+    img.style.padding = '8px';
+    img.style.background = '#fff';
+    img.style.display = 'block';
+    img.src = CURRENT_QR_OBJURL; // ✅ already loaded blob url
+
+    const name = document.createElement('p');
+    name.className = 'font-semibold mt-2';
+    name.textContent = CURRENT_QR_NAME;
+
+    wrap.appendChild(title);
+    wrap.appendChild(img);
+    wrap.appendChild(name);
+    clone.appendChild(wrap);
+
+    // wait image in clone to be ready
+    await new Promise(res=>{
+      if(img.complete) return res();
+      img.onload = () => res();
+      img.onerror = () => res();
+    });
+  }
+
+  // offscreen render
+  clone.style.position='fixed';
+  clone.style.left='-99999px';
+  clone.style.top='0';
+  clone.style.width = original.offsetWidth + 'px';
+  clone.style.background = '#fff';
+  document.body.appendChild(clone);
+
+  await new Promise(r=>requestAnimationFrame(r));
+  await new Promise(r=>requestAnimationFrame(r));
+
+  const canvas = await html2canvas(clone,{
+    backgroundColor:'#ffffff',
+    scale: Math.min(2, window.devicePixelRatio*1.5),
+    useCORS:true,
+    allowTaint:false,
+    logging:false,
+    windowWidth: clone.scrollWidth,
+    windowHeight: clone.scrollHeight
+  });
+
+  document.body.removeChild(clone);
+
+  // compose with title
+  const margin=20, titleHeight=28;
+  const out=document.createElement('canvas');
+  out.width = canvas.width + margin*2;
+  out.height = canvas.height + margin*3 + titleHeight;
+
+  const ctx = out.getContext('2d');
+  ctx.fillStyle='#fff'; ctx.fillRect(0,0,out.width,out.height);
+  ctx.fillStyle='#000'; ctx.font='bold 35px system-ui, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='top';
+  ctx.fillText('Thailand Guide - Supplier By Ye', out.width/2, margin);
+  ctx.drawImage(canvas, margin, margin*2 + titleHeight);
+
+  const a=document.createElement('a');
+  a.href = out.toDataURL('image/jpeg',0.92);
+  a.download = filename;
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>document.body.removeChild(a),0);
+}
+
+document.getElementById('btnSave1').addEventListener('click', ()=>saveSectionAsJpeg('box-thb2mmk','thb-to-mmk.jpg'));
+document.getElementById('btnSave2').addEventListener('click', ()=>saveSectionAsJpeg('box-mmk2thb','mmk-to-thb.jpg'));
+</script>
+
+</body>
+</html>
